@@ -1,8 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Typography,
   Box,
@@ -43,7 +39,7 @@ export const LoginPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { isLoading, error, isAuthenticated } = useAppSelector(
     (state) => state.auth
   );
@@ -94,15 +90,16 @@ export const LoginPage = () => {
 
   // Handle input changes
   const handleInputChange = useCallback(
-    (field: keyof LoginFormData) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      setFormData((prev) => ({ ...prev, [field]: value }));
+    (field: keyof LoginFormData) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        setFormData((prev) => ({ ...prev, [field]: value }));
 
-      // Clear field error when user starts typing
-      if (formErrors[field]) {
-        setFormErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    },
+        // Clear field error when user starts typing
+        if (formErrors[field]) {
+          setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+        }
+      },
     [formErrors]
   );
 
@@ -128,7 +125,7 @@ export const LoginPage = () => {
 
       try {
         const result = await dispatch(loginUser(formData));
-        
+
         if (result.type === "auth/login/fulfilled") {
           // Navigation is handled by useEffect above
           console.log("Login successful");
@@ -184,8 +181,8 @@ export const LoginPage = () => {
 
         {/* Error Alert */}
         {error && (
-          <Alert 
-            severity="error" 
+          <Alert
+            severity="error"
             sx={{ mb: 3 }}
             onClose={handleDismissError}
             action={
@@ -331,7 +328,7 @@ export const LoginPage = () => {
               Sign Up
             </Link>
           </Typography>
-          
+
           <Typography variant="body2" color="text.secondary">
             <Link
               href="#"
@@ -350,13 +347,26 @@ export const LoginPage = () => {
         {/* Demo Credentials (Development Only) */}
         {import.meta.env.DEV && (
           <Box mt={3} p={2} bgcolor="grey.50" borderRadius={1}>
-            <Typography variant="caption" display="block" mb={1} fontWeight={600}>
+            <Typography
+              variant="caption"
+              display="block"
+              mb={1}
+              fontWeight={600}
+            >
               Demo Credentials:
             </Typography>
-            <Typography variant="caption" display="block" color="text.secondary">
+            <Typography
+              variant="caption"
+              display="block"
+              color="text.secondary"
+            >
               Email: demo@example.com
             </Typography>
-            <Typography variant="caption" display="block" color="text.secondary">
+            <Typography
+              variant="caption"
+              display="block"
+              color="text.secondary"
+            >
               Password: demo123
             </Typography>
           </Box>

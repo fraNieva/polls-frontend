@@ -58,7 +58,7 @@ const TestWrapper = ({ children, authState = {} }: TestWrapperProps) => {
       },
     },
   });
-  
+
   return (
     <Provider store={store}>
       <BrowserRouter>{children}</BrowserRouter>
@@ -78,16 +78,20 @@ describe("LoginPage", () => {
       </TestWrapper>
     );
 
-    expect(screen.getByRole("heading", { name: /welcome back/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /welcome back/i })
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /sign in/i })
+    ).toBeInTheDocument();
     expect(screen.getByText(/don't have an account/i)).toBeInTheDocument();
   });
 
   it("shows validation errors for empty fields", async () => {
     const user = userEvent.setup();
-    
+
     render(
       <TestWrapper>
         <LoginPage />
@@ -105,7 +109,7 @@ describe("LoginPage", () => {
 
   it("shows validation error for invalid email format", async () => {
     const user = userEvent.setup();
-    
+
     render(
       <TestWrapper>
         <LoginPage />
@@ -119,13 +123,15 @@ describe("LoginPage", () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Please enter a valid email address")).toBeInTheDocument();
+      expect(
+        screen.getByText("Please enter a valid email address")
+      ).toBeInTheDocument();
     });
   });
 
   it("shows validation error for short password", async () => {
     const user = userEvent.setup();
-    
+
     render(
       <TestWrapper>
         <LoginPage />
@@ -139,13 +145,15 @@ describe("LoginPage", () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Password must be at least 6 characters long")).toBeInTheDocument();
+      expect(
+        screen.getByText("Password must be at least 6 characters long")
+      ).toBeInTheDocument();
     });
   });
 
   it("toggles password visibility", async () => {
     const user = userEvent.setup();
-    
+
     render(
       <TestWrapper>
         <LoginPage />
@@ -153,7 +161,9 @@ describe("LoginPage", () => {
     );
 
     const passwordInput = screen.getByLabelText(/password/i);
-    const toggleButton = screen.getByRole("button", { name: /toggle password visibility/i });
+    const toggleButton = screen.getByRole("button", {
+      name: /toggle password visibility/i,
+    });
 
     // Initially password should be hidden
     expect(passwordInput).toHaveAttribute("type", "password");
@@ -176,7 +186,7 @@ describe("LoginPage", () => {
 
     expect(screen.getByText("Signing In...")).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toBeInTheDocument();
-    
+
     // Form fields should be disabled during loading
     expect(screen.getByLabelText(/email address/i)).toBeDisabled();
     expect(screen.getByLabelText(/password/i)).toBeDisabled();
@@ -184,7 +194,7 @@ describe("LoginPage", () => {
 
   it("displays error message from Redux state", () => {
     const errorMessage = "Invalid email or password";
-    
+
     render(
       <TestWrapper authState={{ error: errorMessage }}>
         <LoginPage />
@@ -196,7 +206,7 @@ describe("LoginPage", () => {
 
   it("clears field errors when user starts typing", async () => {
     const user = userEvent.setup();
-    
+
     render(
       <TestWrapper>
         <LoginPage />
@@ -214,7 +224,7 @@ describe("LoginPage", () => {
 
     // Start typing in email field
     await user.type(emailInput, "test");
-    
+
     // Error should be cleared
     expect(screen.queryByText("Email is required")).not.toBeInTheDocument();
   });
@@ -251,7 +261,7 @@ describe("LoginPage", () => {
 
   it("handles Enter key press for form submission", async () => {
     const user = userEvent.setup();
-    
+
     render(
       <TestWrapper>
         <LoginPage />
@@ -259,7 +269,7 @@ describe("LoginPage", () => {
     );
 
     const passwordInput = screen.getByLabelText(/password/i);
-    
+
     // Type in password field and press Enter
     await user.type(passwordInput, "test123{enter}");
 
