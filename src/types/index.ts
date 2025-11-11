@@ -7,3 +7,16 @@ export type {
   CreatePollData,
   VoteResponse,
 } from "./poll";
+
+export type {
+  User,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  AuthError,
+  UpdateProfileRequest,
+  PasswordChangeRequest,
+  PasswordResetRequest,
+  PasswordResetConfirmRequest,
+} from "./user";
