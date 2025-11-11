@@ -77,16 +77,26 @@ export const authAPI = {
 
 // Polls API
 export const pollsAPI = {
-  async getPublicPolls(page = 1, size = 10, search?: string) {
+  async getPolls(
+    page = 1,
+    size = 10,
+    filters: {
+      search?: string;
+      is_public?: boolean;
+      is_active?: boolean;
+      owner_id?: number;
+    } = {}
+  ) {
     const params = new URLSearchParams({
       page: page.toString(),
       size: size.toString(),
-      is_public: "true",
-      is_active: "true",
     });
 
-    if (search) {
-      params.append("search", search);
+    // Add filters to params
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined) {
+        params.append(key, value.toString());
+      }
     }
 
     const response = await apiClient.get(`/polls/?${params}`);
@@ -103,31 +113,21 @@ export const pollsAPI = {
     };
   },
 
-  async getPolls(
-    page = 1,
-    size = 10,
-    filters: Record<string, string | number | boolean> = {}
-  ) {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
-      ...Object.fromEntries(
-        Object.entries(filters).filter(([, value]) => value !== undefined)
-      ),
+  // Convenience method for public polls (for backward compatibility)
+  async getPublicPolls(page = 1, size = 10, search?: string) {
+    return this.getPolls(page, size, {
+      search,
+      is_public: true,
+      is_active: true,
     });
+  },
 
-    const response = await apiClient.get(`/polls/?${params}`);
-    return {
-      polls: response.data.polls,
-      pagination: {
-        total: response.data.total,
-        page: response.data.page,
-        size: response.data.size,
-        pages: response.data.pages,
-        has_next: response.data.has_next,
-        has_prev: response.data.has_prev,
-      },
-    };
+  // Convenience method for user's polls
+  async getUserPolls(page = 1, size = 10, search?: string) {
+    return this.getPolls(page, size, {
+      search,
+      // No is_public filter - will return user's public and private polls
+    });
   },
 
   async getPollDetails(pollId: number) {

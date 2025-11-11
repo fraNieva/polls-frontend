@@ -1,36 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { pollsAPI } from "../../services/api";
-
-interface PollOption {
-  id: number;
-  text: string;
-  vote_count: number;
-  percentage: number;
-  poll_id: number;
-}
-
-interface Poll {
-  id: number;
-  title: string;
-  description: string | null;
-  is_active: boolean;
-  is_public: boolean;
-  owner_id: number;
-  pub_date: string;
-  options: PollOption[];
-  total_votes: number;
-  user_has_voted: boolean;
-  user_vote_option_id: number | null;
-}
-
-interface PaginationMeta {
-  total: number;
-  page: number;
-  size: number;
-  pages: number;
-  has_next: boolean;
-  has_prev: boolean;
-}
+import type { Poll, PaginationMeta } from "../../types/poll";
 
 interface PollsState {
   polls: Poll[];
@@ -38,6 +8,13 @@ interface PollsState {
   pagination: PaginationMeta | null;
   isLoading: boolean;
   error: string | null;
+  searchQuery: string;
+  currentPage: number;
+  filters: {
+    is_public?: boolean;
+    is_active?: boolean;
+    owner_id?: number;
+  };
 }
 
 const initialState: PollsState = {
@@ -46,13 +23,43 @@ const initialState: PollsState = {
   pagination: null,
   isLoading: false,
   error: null,
+  searchQuery: "",
+  currentPage: 1,
+  filters: {
+    is_public: true, // Default to public polls for unauthenticated users
+    is_active: true,
+  },
 };
 
 export const fetchPolls = createAsyncThunk(
   "polls/fetchPolls",
+  async (
+    params: {
+      page?: number;
+      size?: number;
+      search?: string;
+      is_public?: boolean;
+      is_active?: boolean;
+      owner_id?: number;
+    } = {}
+  ) => {
+    const { page, size, search, ...filters } = params;
+    const response = await pollsAPI.getPolls(page, size, {
+      ...(search && { search }),
+      ...filters,
+    });
+    return response;
+  }
+);
+
+// Keep for backward compatibility but deprecate
+export const fetchPublicPolls = createAsyncThunk(
+  "polls/fetchPublicPolls",
   async (params: { page?: number; size?: number; search?: string } = {}) => {
     const response = await pollsAPI.getPolls(params.page, params.size, {
       ...(params.search && { search: params.search }),
+      is_public: true,
+      is_active: true,
     });
     return response;
   }
@@ -84,10 +91,28 @@ const pollsSlice = createSlice({
     clearCurrentPoll: (state) => {
       state.currentPoll = null;
     },
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+      state.currentPage = 1;
+    },
+    setCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
+    // Backward compatibility actions - proxy to unified state
+    clearPublicError: (state) => {
+      state.error = null;
+    },
+    setPublicSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+      state.currentPage = 1; // Reset to first page when searching
+    },
+    setPublicCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch polls
+      // Fetch polls (unified)
       .addCase(fetchPolls.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -100,6 +125,20 @@ const pollsSlice = createSlice({
       .addCase(fetchPolls.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch polls";
+      })
+      // Fetch public polls (backward compatibility - proxy to unified)
+      .addCase(fetchPublicPolls.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchPublicPolls.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.polls = action.payload.polls;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchPublicPolls.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch public polls";
       })
       // Fetch poll by ID
       .addCase(fetchPollById.pending, (state) => {
@@ -124,9 +163,28 @@ const pollsSlice = createSlice({
           // Refresh poll data after voting - in real app, you'd update optimistically
           // or refetch the poll data
         }
+        // Update in unified polls state (no separate public polls)
+        const pollIndex = state.polls.findIndex(
+          (poll) => poll.id === action.payload.pollId
+        );
+        if (pollIndex !== -1) {
+          // Mark as voted optimistically
+          state.polls[pollIndex].user_has_voted = true;
+          state.polls[pollIndex].user_vote_option_id = action.payload.optionId;
+        }
       });
   },
 });
 
-export const { clearError, clearCurrentPoll } = pollsSlice.actions;
+export const {
+  clearError,
+  clearCurrentPoll,
+  setSearchQuery,
+  setCurrentPage,
+  // Backward compatibility exports
+  clearPublicError,
+  setPublicSearchQuery,
+  setPublicCurrentPage,
+} = pollsSlice.actions;
+
 export default pollsSlice.reducer;
