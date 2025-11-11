@@ -2,9 +2,9 @@ import {
   Typography,
   Box,
   Button,
-  Grid,
   Card,
   CardContent,
+  Stack,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { Poll, Create, BarChart } from "@mui/icons-material";
@@ -33,8 +33,12 @@ export const HomePage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={4}
+        sx={{ width: "100%" }}
+      >
+        <Box sx={{ flex: 1 }}>
           <Card>
             <CardContent sx={{ textAlign: "center", p: 4 }}>
               <Poll sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
@@ -46,8 +50,8 @@ export const HomePage = () => {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+        <Box sx={{ flex: 1 }}>
           <Card>
             <CardContent sx={{ textAlign: "center", p: 4 }}>
               <Create sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
@@ -59,8 +63,8 @@ export const HomePage = () => {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+        <Box sx={{ flex: 1 }}>
           <Card>
             <CardContent sx={{ textAlign: "center", p: 4 }}>
               <BarChart sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
@@ -72,8 +76,8 @@ export const HomePage = () => {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
     </Box>
   );
 };

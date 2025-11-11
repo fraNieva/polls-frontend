@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // API Configuration
-const API_BASE_URL = "http://localhost:8000/api/v1";
+const API_BASE_URL = "/api/v1";
 
 // Create axios instance
 const apiClient = axios.create({
@@ -32,7 +32,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem("access_token");
-      window.location.href = "/login";
+      globalThis.location.href = "/login";
     }
     return Promise.reject(error);
   }
@@ -77,6 +77,32 @@ export const authAPI = {
 
 // Polls API
 export const pollsAPI = {
+  async getPublicPolls(page = 1, size = 10, search?: string) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      is_public: "true",
+      is_active: "true",
+    });
+
+    if (search) {
+      params.append("search", search);
+    }
+
+    const response = await apiClient.get(`/polls/?${params}`);
+    return {
+      polls: response.data.polls,
+      pagination: {
+        total: response.data.total,
+        page: response.data.page,
+        size: response.data.size,
+        pages: response.data.pages,
+        has_next: response.data.has_next,
+        has_prev: response.data.has_prev,
+      },
+    };
+  },
+
   async getPolls(
     page = 1,
     size = 10,
