@@ -360,14 +360,14 @@ export const LoginPage = () => {
               display="block"
               color="text.secondary"
             >
-              Email: demo@example.com
+              Email: bob@example.com
             </Typography>
             <Typography
               variant="caption"
               display="block"
               color="text.secondary"
             >
-              Password: demo123
+              Password: bob123
             </Typography>
           </Box>
         )}

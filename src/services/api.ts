@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_URL, isDevelopment, DEBUG_API } from "../config/environment";
 
-// API Configuration
-const API_BASE_URL = "/api/v1";
+// API Configuration - now uses environment variables
+const API_BASE_URL = API_URL;
 
 // Create axios instance
 const apiClient = axios.create({
@@ -11,6 +12,11 @@ const apiClient = axios.create({
   },
 });
 
+// Debug logging in development
+if (isDevelopment && DEBUG_API) {
+  console.log("🌐 API Base URL configured:", API_BASE_URL);
+}
+
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
@@ -18,17 +24,47 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Debug logging for API requests
+    if (isDevelopment && DEBUG_API) {
+      console.log(
+        `🔗 API Request: ${config.method?.toUpperCase()} ${config.url}`,
+        config.data
+      );
+    }
+
     return config;
   },
   (error) => {
+    if (isDevelopment && DEBUG_API) {
+      console.error("🚨 API Request Error:", error);
+    }
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Debug logging for API responses
+    if (isDevelopment && DEBUG_API) {
+      console.log(
+        `✅ API Response: ${response.config.method?.toUpperCase()} ${
+          response.config.url
+        }`,
+        response.data
+      );
+    }
+    return response;
+  },
   (error) => {
+    if (isDevelopment && DEBUG_API) {
+      console.error(
+        "🚨 API Response Error:",
+        error.response?.data || error.message
+      );
+    }
+
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem("access_token");

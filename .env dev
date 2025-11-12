@@ -1,0 +1,16 @@
+# Development Environment Configuration
+VITE_API_URL=http://localhost:8000/api/v1
+VITE_APP_ENV=development
+VITE_ENABLE_ANALYTICS=false
+VITE_LOG_LEVEL=debug
+
+# Development optimizations
+VITE_ENABLE_SERVICE_WORKER=false
+VITE_ENABLE_CACHING=false
+
+# Security (relaxed for development)
+VITE_ENABLE_CSP=false
+
+# Debug flags
+VITE_DEBUG_API=true
+VITE_DEBUG_REDUX=true
