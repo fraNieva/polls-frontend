@@ -1,310 +1,138 @@
-import {
-  useEffect,
-  useMemo,
-  useCallback,
-  useState,
-  Suspense,
-  use,
-} from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../store";
+import { Container } from "@mui/material";
 import {
-  Typography,
-  Box,
-  Alert,
-  TextField,
-  InputAdornment,
-  Container,
-  Paper,
-  Pagination,
-  Skeleton,
-} from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
-import { PollCard } from "../components/PollCard";
-import {
-  // Backward compatibility imports for now
-  clearPublicError,
-  setPublicSearchQuery,
-  setPublicCurrentPage,
+  fetchPolls,
+  clearError,
+  setSearchQuery,
+  setCurrentPage,
 } from "../store/slices/pollsSlice";
-import { pollsAPI } from "../services/api";
-import type { Poll, PaginationMeta } from "../types/poll";
+import { useDebounce } from "../hooks/useDebounce";
+import { PollsPageHeader } from "../components/PollsPageHeader";
+import { PollsErrorDisplay } from "../components/PollsErrorDisplay";
+import { PollsLoadingSkeleton } from "../components/PollsLoadingSkeleton";
+import { PollsEmptyState } from "../components/PollsEmptyState";
+import { PollsGrid } from "../components/PollsGrid";
+import { PollsPagination } from "../components/PollsPagination";
 
-// Create a promise for polling data that will be consumed by use()
-const createPollsPromise = (page: number, search: string) => {
-  return pollsAPI.getPublicPolls(page, 10, search || undefined);
-};
-
-// Component that uses the use() hook to fetch data with Redux integration
-const PollsList = ({
-  pollsPromise,
-  onPageChange,
-  onDataLoaded,
-}: {
-  pollsPromise: Promise<{ polls: Poll[]; pagination: PaginationMeta }>;
-  onPageChange: (page: number) => void;
-  onDataLoaded: () => void;
-}) => {
-  const data = use(pollsPromise);
-
-  // Update Redux store when data is loaded
-  useEffect(() => {
-    onDataLoaded();
-  }, [onDataLoaded]);
-
-  if (!data.polls.length) {
-    return (
-      <Box textAlign="center" py={8}>
-        <Typography variant="h6" color="text.secondary">
-          No public polls found
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mt={1}>
-          Be the first to create a public poll!
-        </Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2, 1fr)",
-            lg: "repeat(3, 1fr)",
-          },
-          gap: 3,
-        }}
-      >
-        {data.polls.map((poll) => (
-          <PollCard poll={poll} key={poll.id} />
-        ))}
-      </Box>
-
-      {data.pagination.pages > 1 && (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <Paper sx={{ p: 2 }}>
-            <Pagination
-              count={data.pagination.pages}
-              page={data.pagination.page}
-              color="primary"
-              size="large"
-              showFirstButton
-              showLastButton
-              onChange={(_, newPage) => onPageChange(newPage)}
-            />
-          </Paper>
-        </Box>
-      )}
-    </>
-  );
-};
-
-// Enhanced loading skeleton component
-const PollsLoadingSkeleton = () => (
-  <Box
-    sx={{
-      display: "grid",
-      gridTemplateColumns: {
-        xs: "1fr",
-        sm: "repeat(2, 1fr)",
-        lg: "repeat(3, 1fr)",
-      },
-      gap: 3,
-    }}
-  >
-    {Array.from({ length: 6 }, (_, index) => (
-      <Paper
-        sx={{
-          p: 3,
-          height: 300,
-          backgroundColor: "grey.50",
-          animation: "pulse 1.5s ease-in-out infinite",
-          "@keyframes pulse": {
-            "0%": {
-              backgroundColor: "grey.50",
-            },
-            "50%": {
-              backgroundColor: "grey.100",
-            },
-            "100%": {
-              backgroundColor: "grey.50",
-            },
-          },
-        }}
-        key={`skeleton-poll-${index}`}
-      >
-        <Skeleton variant="circular" width={40} height={40} sx={{ mb: 2 }} />
-        <Skeleton variant="text" height={32} sx={{ mb: 1 }} />
-        <Skeleton variant="text" height={24} sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" height={60} sx={{ mb: 2 }} />
-        <Box display="flex" gap={1} mt={2}>
-          <Skeleton variant="rounded" width={60} height={24} />
-          <Skeleton variant="rounded" width={80} height={24} />
-        </Box>
-        <Box display="flex" justifyContent="space-between" mt={2}>
-          <Skeleton variant="rounded" width={100} height={32} />
-          <Skeleton variant="rounded" width={80} height={32} />
-        </Box>
-      </Paper>
-    ))}
-  </Box>
-);
-
-// Custom hook for debounced search
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
+/**
+ * Main PollsPage component
+ * Displays public polls with search, pagination, and voting functionality
+ */
 export const PollsPage = () => {
   const dispatch = useAppDispatch();
+  const { polls, isLoading, error, searchQuery, currentPage, pagination } =
+    useAppSelector((state) => state.polls);
 
-  // Redux state for search and pagination management (unified approach)
-  const { polls, pagination, error, searchQuery, currentPage } = useAppSelector(
-    (state) => state.polls
-  );
+  // Local state for search input (before debounce)
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || "");
 
-  // Debounce search query
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Debounce search query to avoid too many API calls
+  const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
 
-  // Create promise for use() hook - regenerate when search/page changes
-  const [pollsPromise, setPollsPromise] = useState(() =>
-    createPollsPromise(currentPage, debouncedSearchQuery)
-  );
-
-  // Update promise when search or page changes
+  // Only update Redux search query when debounced value actually changes
   useEffect(() => {
-    const newPromise = createPollsPromise(currentPage, debouncedSearchQuery);
-    setPollsPromise(newPromise);
-  }, [currentPage, debouncedSearchQuery]);
+    if (debouncedSearchQuery !== searchQuery) {
+      dispatch(setSearchQuery(debouncedSearchQuery));
+    }
+  }, [debouncedSearchQuery, searchQuery, dispatch]);
 
-  // Handlers - use unified actions
+  // Fetch polls when component mounts or when search/page changes
+  useEffect(() => {
+    // AbortController for request cancellation
+    const abortController = new AbortController();
+
+    dispatch(
+      fetchPolls({
+        page: currentPage,
+        search: debouncedSearchQuery || undefined,
+        is_public: true, // Only fetch public polls
+        is_active: true,
+      })
+    );
+
+    // Cleanup function to abort request if component unmounts or effect re-runs
+    return () => {
+      abortController.abort();
+    };
+  }, [dispatch, currentPage, debouncedSearchQuery]);
+
+  // Handle page changes
   const handlePageChange = useCallback(
-    (newPage: number) => {
-      dispatch(setPublicCurrentPage(newPage)); // Use backward compatibility action for now
+    (_: React.ChangeEvent<unknown>, newPage: number) => {
+      dispatch(setCurrentPage(newPage));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [dispatch]
   );
 
+  // Handle search changes
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      dispatch(setPublicSearchQuery(event.target.value)); // Use backward compatibility action for now
+      const value = event.target.value;
+      setLocalSearchQuery(value);
+      // Only reset to page 1 if we're not already there
+      if (currentPage !== 1) {
+        dispatch(setCurrentPage(1));
+      }
     },
-    [dispatch]
+    [dispatch, currentPage]
   );
 
+  // Clear error handler
   const handleClearError = useCallback(() => {
-    dispatch(clearPublicError()); // Use backward compatibility action for now
+    dispatch(clearError());
   }, [dispatch]);
 
-  // Sync data from use() hook to Redux store
-  const handleDataLoaded = useCallback(() => {
-    // This could trigger a Redux action to cache the data
-    // For now, we rely on the component state from use() hook
+  // Handle retry
+  const handleRetry = useCallback(() => {
+    handleClearError();
+    dispatch(
+      fetchPolls({
+        page: currentPage,
+        search: debouncedSearchQuery || undefined,
+        is_public: true,
+        is_active: true,
+      })
+    );
+  }, [dispatch, currentPage, debouncedSearchQuery, handleClearError]);
+
+  // Handle vote action (to be implemented)
+  const handleVote = useCallback((pollId: number, optionId: number) => {
+    // Future enhancement: Implement voting logic with API call
+    console.log("Vote action:", { pollId, optionId });
   }, []);
 
-  // Show cached data if available while loading new data
-  const showCachedData = useMemo(() => {
-    return polls.length > 0 && !error;
-  }, [polls.length, error]);
-
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box mb={4}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Public Polls
-        </Typography>
-        <Typography variant="h6" color="text.secondary" mb={3}>
-          Discover and participate in polls from the community
-        </Typography>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Header with search */}
+      <PollsPageHeader
+        searchQuery={localSearchQuery}
+        onSearchChange={handleSearchChange}
+      />
 
-        {/* Search */}
-        <TextField
-          fullWidth
-          placeholder="Search polls..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            },
-          }}
-          sx={{ maxWidth: 500 }}
+      {/* Error Display */}
+      {error && <PollsErrorDisplay error={error} onRetry={handleRetry} />}
+
+      {/* Content */}
+      {isLoading && <PollsLoadingSkeleton />}
+
+      {!isLoading && polls.length === 0 && (
+        <PollsEmptyState
+          hasSearchQuery={!!debouncedSearchQuery}
+          searchQuery={debouncedSearchQuery}
         />
-      </Box>
-
-      {/* Error State */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={handleClearError}>
-          {error}
-        </Alert>
       )}
 
-      {/* Stats */}
-      {pagination && (
-        <Box mb={3}>
-          <Typography variant="body2" color="text.secondary">
-            {debouncedSearchQuery
-              ? `Found ${pagination.total} polls matching "${debouncedSearchQuery}"`
-              : `Showing ${pagination.total} public polls`}
-          </Typography>
-        </Box>
+      {!isLoading && polls.length > 0 && (
+        <>
+          <PollsGrid polls={polls} onVote={handleVote} />
+          <PollsPagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
-
-      {/* Polls Content with Suspense and use() hook */}
-      <Suspense
-        fallback={
-          showCachedData ? (
-            // Show cached data with loading indicator
-            <Box>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "repeat(2, 1fr)",
-                    lg: "repeat(3, 1fr)",
-                  },
-                  gap: 3,
-                  opacity: 0.7,
-                }}
-              >
-                {polls.map((poll) => (
-                  <PollCard poll={poll} key={poll.id} />
-                ))}
-              </Box>
-            </Box>
-          ) : (
-            // Show skeleton for fresh loads
-            <PollsLoadingSkeleton />
-          )
-        }
-      >
-        <PollsList
-          pollsPromise={pollsPromise}
-          onPageChange={handlePageChange}
-          onDataLoaded={handleDataLoaded}
-          key={`${currentPage}-${debouncedSearchQuery}`}
-        />
-      </Suspense>
     </Container>
   );
 };

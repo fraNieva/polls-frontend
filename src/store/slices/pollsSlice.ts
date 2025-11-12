@@ -33,22 +33,27 @@ const initialState: PollsState = {
 
 export const fetchPolls = createAsyncThunk(
   "polls/fetchPolls",
-  async (
-    params: {
-      page?: number;
-      size?: number;
-      search?: string;
-      is_public?: boolean;
-      is_active?: boolean;
-      owner_id?: number;
-    } = {}
-  ) => {
+  async (params: {
+    page?: number;
+    size?: number;
+    search?: string;
+    is_public?: boolean;
+    is_active?: boolean;
+    owner_id?: number;
+  }) => {
     const { page, size, search, ...filters } = params;
     const response = await pollsAPI.getPolls(page, size, {
       ...(search && { search }),
       ...filters,
     });
     return response;
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState() as { polls: PollsState };
+      // Only fetch if not already loading to prevent duplicate requests
+      return !state.polls.isLoading;
+    },
   }
 );
 
