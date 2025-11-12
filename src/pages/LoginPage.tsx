@@ -1,6 +1,7 @@
-import { useCallback } from "react";
-import { Container, Paper, Stack, Box } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import { Container, Paper, Stack, Box, Alert } from "@mui/material";
 import { Login as LoginIcon } from "@mui/icons-material";
+import { useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { loginUser, clearError } from "../store/slices/authSlice";
 import {
@@ -44,7 +45,21 @@ const validateLoginForm = (data: LoginFormData): FormErrors<LoginFormData> => {
  */
 export const LoginPage = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+
+  // Check for success message from navigation state
+  const [successMessage, setSuccessMessage] = useState<string | null>(
+    location.state?.message || null
+  );
+
+  // Clear success message after showing it
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   // Handle post-authentication redirect
   useAuthRedirect();
@@ -102,6 +117,17 @@ export const LoginPage = () => {
           title="Welcome Back"
           subtitle="Sign in to your account to continue"
         />
+
+        {/* Success Alert */}
+        {successMessage && (
+          <Alert
+            severity="success"
+            onClose={() => setSuccessMessage(null)}
+            sx={{ mb: 2 }}
+          >
+            {successMessage}
+          </Alert>
+        )}
 
         {/* Error Alert */}
         <AuthErrorAlert error={error} onDismiss={handleClearError} />

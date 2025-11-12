@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { authAPI } from "../../services/api";
+import { extractAuthError } from "../../utils/apiErrors";
 
 interface User {
   id: number;
@@ -28,31 +29,52 @@ const initialState: AuthState = {
 // Async thunks
 export const loginUser = createAsyncThunk(
   "auth/login",
-  async ({ email, password }: { email: string; password: string }) => {
-    const response = await authAPI.login(email, password);
-    localStorage.setItem("access_token", response.access_token);
-    return response;
+  async (
+    { email, password }: { email: string; password: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await authAPI.login(email, password);
+      localStorage.setItem("access_token", response.access_token);
+      return response;
+    } catch (error) {
+      const errorMessage = extractAuthError(error);
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
 export const registerUser = createAsyncThunk(
   "auth/register",
-  async (userData: {
-    username: string;
-    email: string;
-    password: string;
-    full_name: string;
-  }) => {
-    const response = await authAPI.register(userData);
-    return response;
+  async (
+    userData: {
+      username: string;
+      email: string;
+      password: string;
+      full_name: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await authAPI.register(userData);
+      return response;
+    } catch (error) {
+      const errorMessage = extractAuthError(error);
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
 export const getCurrentUser = createAsyncThunk(
   "auth/getCurrentUser",
-  async () => {
-    const response = await authAPI.getCurrentUser();
-    return response;
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      return response;
+    } catch (error) {
+      const errorMessage = extractAuthError(error);
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
@@ -85,7 +107,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || "Login failed";
+        state.error = (action.payload as string) || "Login failed";
       })
       // Register
       .addCase(registerUser.pending, (state) => {
@@ -97,7 +119,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || "Registration failed";
+        state.error = (action.payload as string) || "Registration failed";
       })
       // Get current user
       .addCase(getCurrentUser.fulfilled, (state, action) => {

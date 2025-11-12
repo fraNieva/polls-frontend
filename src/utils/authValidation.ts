@@ -3,6 +3,8 @@
  * Provides reusable validation functions for auth forms
  */
 
+import type { FormErrors } from "./authUtils";
+
 export interface ValidationRule {
   required?: boolean;
   minLength?: number;
@@ -28,6 +30,15 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PASSWORD_RULES = {
   minLength: 6,
   maxLength: 128,
+} as const;
+
+/**
+ * Username validation rules
+ */
+export const USERNAME_RULES = {
+  minLength: 3,
+  maxLength: 30,
+  pattern: /^\w+$/,
 } as const;
 
 /**
@@ -57,6 +68,12 @@ export const AUTH_VALIDATION_RULES = {
     minLength: 2,
     maxLength: 50,
   },
+  username: {
+    required: true,
+    minLength: USERNAME_RULES.minLength,
+    maxLength: USERNAME_RULES.maxLength,
+    pattern: USERNAME_RULES.pattern,
+  },
 } as const;
 
 /**
@@ -69,6 +86,29 @@ export const validateEmail = (email: string): string | null => {
 
   if (!EMAIL_REGEX.test(email)) {
     return "Please enter a valid email address";
+  }
+
+  return null;
+};
+
+/**
+ * Validate username
+ */
+export const validateUsername = (username: string): string | null => {
+  if (!username) {
+    return "Username is required";
+  }
+
+  if (username.length < USERNAME_RULES.minLength) {
+    return `Username must be at least ${USERNAME_RULES.minLength} characters long`;
+  }
+
+  if (username.length > USERNAME_RULES.maxLength) {
+    return `Username must be no more than ${USERNAME_RULES.maxLength} characters long`;
+  }
+
+  if (!USERNAME_RULES.pattern.test(username)) {
+    return "Username can only contain letters, numbers, and underscores";
   }
 
   return null;
@@ -138,6 +178,91 @@ export const validateName = (
   }
 
   return null;
+};
+
+/**
+ * Validate login form
+ */
+export const validateLoginForm = (data: {
+  email: string;
+  password: string;
+}): FormErrors<{ email: string; password: string }> => {
+  const errors: FormErrors<{ email: string; password: string }> = {};
+
+  const emailError = validateEmail(data.email);
+  if (emailError) {
+    errors.email = emailError;
+  }
+
+  const passwordError = validatePassword(data.password);
+  if (passwordError) {
+    errors.password = passwordError;
+  }
+
+  return errors;
+};
+
+/**
+ * Validate register form
+ */
+export const validateRegisterForm = (data: {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}): FormErrors<{
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}> => {
+  const errors: FormErrors<{
+    firstName: string;
+    lastName: string;
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  }> = {};
+
+  const firstNameError = validateName(data.firstName, "First name");
+  if (firstNameError) {
+    errors.firstName = firstNameError;
+  }
+
+  const lastNameError = validateName(data.lastName, "Last name");
+  if (lastNameError) {
+    errors.lastName = lastNameError;
+  }
+
+  const usernameError = validateUsername(data.username);
+  if (usernameError) {
+    errors.username = usernameError;
+  }
+
+  const emailError = validateEmail(data.email);
+  if (emailError) {
+    errors.email = emailError;
+  }
+
+  const passwordError = validatePassword(data.password);
+  if (passwordError) {
+    errors.password = passwordError;
+  }
+
+  const confirmPasswordError = validatePasswordConfirmation(
+    data.password,
+    data.confirmPassword
+  );
+  if (confirmPasswordError) {
+    errors.confirmPassword = confirmPasswordError;
+  }
+
+  return errors;
 };
 
 /**
