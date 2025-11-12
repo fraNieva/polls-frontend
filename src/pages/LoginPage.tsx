@@ -1,154 +1,82 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  Typography,
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Alert,
-  Container,
-  Link,
-  CircularProgress,
-  InputAdornment,
-  IconButton,
-  Divider,
-  Stack,
-} from "@mui/material";
-import {
-  Email as EmailIcon,
-  Lock as LockIcon,
-  Visibility,
-  VisibilityOff,
-  Login as LoginIcon,
-} from "@mui/icons-material";
-import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
+import { useCallback } from "react";
+import { Container, Paper, Stack, Box } from "@mui/material";
+import { Login as LoginIcon } from "@mui/icons-material";
 import { useAppDispatch, useAppSelector } from "../store";
 import { loginUser, clearError } from "../store/slices/authSlice";
+import {
+  AuthPageHeader,
+  AuthErrorAlert,
+  EmailField,
+  PasswordField,
+  AuthSubmitButton,
+  AuthFooterLinks,
+} from "../components";
+import { useAuthForm, usePasswordToggle, useAuthRedirect } from "../hooks";
+import { validateEmail, validatePassword } from "../utils/authValidation";
+import type { FormErrors } from "../utils/authUtils";
 
-interface LoginFormData {
+/**
+ * Login form data interface
+ */
+interface LoginFormData extends Record<string, string> {
   email: string;
   password: string;
 }
 
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
+/**
+ * Validate login form data
+ */
+const validateLoginForm = (data: LoginFormData): FormErrors<LoginFormData> => {
+  const errors: FormErrors<LoginFormData> = {};
 
+  const emailError = validateEmail(data.email);
+  if (emailError) errors.email = emailError;
+
+  const passwordError = validatePassword(data.password);
+  if (passwordError) errors.password = passwordError;
+
+  return errors;
+};
+
+/**
+ * Login page component
+ * Provides user authentication with email and password
+ */
 export const LoginPage = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { isLoading, error } = useAppSelector((state) => state.auth);
 
-  const { isLoading, error, isAuthenticated } = useAppSelector(
-    (state) => state.auth
-  );
+  // Handle post-authentication redirect
+  useAuthRedirect();
 
-  // Form state
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
-    password: "",
+  // Password visibility management
+  const { showPassword, togglePasswordVisibility } = usePasswordToggle();
+
+  // Form state and validation management
+  const {
+    formData,
+    handleSubmit,
+    createInputHandler,
+    createBlurHandler,
+    shouldShowFieldError,
+    getFieldErrorMessage,
+  } = useAuthForm<LoginFormData>({
+    fields: ["email", "password"],
+    validateForm: validateLoginForm,
+    onSubmit: async (data) => {
+      const result = await dispatch(loginUser(data));
+      if (result.type === "auth/login/fulfilled") {
+        console.log("Login successful");
+      }
+    },
   });
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // Redirect after successful login
-  useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || "/polls";
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, navigate, location.state?.from?.pathname]);
-
-  // Clear auth errors when component mounts
-  useEffect(() => {
+  // Clear error handler
+  const handleClearError = useCallback(() => {
     dispatch(clearError());
   }, [dispatch]);
 
-  // Form validation
-  const validateForm = useCallback((): boolean => {
-    const errors: FormErrors = {};
-
-    // Email validation
-    if (!formData.email) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      errors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      errors.password = "Password must be at least 6 characters long";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  }, [formData]);
-
-  // Handle input changes
-  const handleInputChange = useCallback(
-    (field: keyof LoginFormData) =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = event.target.value;
-        setFormData((prev) => ({ ...prev, [field]: value }));
-
-        // Clear field error when user starts typing
-        if (formErrors[field]) {
-          setFormErrors((prev) => ({ ...prev, [field]: undefined }));
-        }
-      },
-    [formErrors]
-  );
-
-  // Handle field blur for validation feedback
-  const handleFieldBlur = useCallback(
-    (field: keyof LoginFormData) => () => {
-      setTouched((prev) => ({ ...prev, [field]: true }));
-    },
-    []
-  );
-
-  // Handle form submission
-  const handleSubmit = useCallback(
-    async (event: React.FormEvent) => {
-      event.preventDefault();
-
-      // Mark all fields as touched for validation display
-      setTouched({ email: true, password: true });
-
-      if (!validateForm()) {
-        return;
-      }
-
-      try {
-        const result = await dispatch(loginUser(formData));
-
-        if (result.type === "auth/login/fulfilled") {
-          // Navigation is handled by useEffect above
-          console.log("Login successful");
-        }
-      } catch (err) {
-        // Error handling is managed by Redux slice
-        console.error("Login error:", err);
-      }
-    },
-    [formData, validateForm, dispatch]
-  );
-
-  // Toggle password visibility
-  const handleTogglePasswordVisibility = useCallback(() => {
-    setShowPassword((prev) => !prev);
-  }, []);
-
-  // Handle error dismissal
-  const handleDismissError = useCallback(() => {
-    dispatch(clearError());
-  }, [dispatch]);
-
-  // Handle enter key press
+  // Handle enter key press for form submission
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === "Enter") {
@@ -169,34 +97,14 @@ export const LoginPage = () => {
         }}
       >
         {/* Header */}
-        <Box textAlign="center" mb={4}>
-          <LoginIcon sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
-          <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
-            Welcome Back
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Sign in to your account to continue
-          </Typography>
-        </Box>
+        <AuthPageHeader
+          icon={LoginIcon}
+          title="Welcome Back"
+          subtitle="Sign in to your account to continue"
+        />
 
         {/* Error Alert */}
-        {error && (
-          <Alert
-            severity="error"
-            sx={{ mb: 3 }}
-            onClose={handleDismissError}
-            action={
-              <IconButton
-                aria-label="close"
-                color="inherit"
-                size="small"
-                onClick={handleDismissError}
-              />
-            }
-          >
-            {error}
-          </Alert>
-        )}
+        <AuthErrorAlert error={error} onDismiss={handleClearError} />
 
         {/* Login Form */}
         <Box
@@ -207,170 +115,48 @@ export const LoginPage = () => {
         >
           <Stack spacing={3}>
             {/* Email Field */}
-            <TextField
-              fullWidth
-              label="Email Address"
-              type="email"
-              variant="outlined"
+            <EmailField
               value={formData.email}
-              onChange={handleInputChange("email")}
-              onBlur={handleFieldBlur("email")}
-              error={touched.email && !!formErrors.email}
-              helperText={touched.email && formErrors.email}
+              onChange={createInputHandler("email")}
+              onBlur={createBlurHandler("email")}
+              error={shouldShowFieldError("email")}
+              helperText={getFieldErrorMessage("email")}
               disabled={isLoading}
-              autoComplete="email"
               autoFocus
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "&:hover fieldset": {
-                    borderColor: "primary.main",
-                  },
-                },
-              }}
             />
 
             {/* Password Field */}
-            <TextField
-              fullWidth
-              label="Password"
-              type={showPassword ? "text" : "password"}
-              variant="outlined"
+            <PasswordField
               value={formData.password}
-              onChange={handleInputChange("password")}
-              onBlur={handleFieldBlur("password")}
-              error={touched.password && !!formErrors.password}
-              helperText={touched.password && formErrors.password}
+              onChange={createInputHandler("password")}
+              onBlur={createBlurHandler("password")}
+              error={shouldShowFieldError("password")}
+              helperText={getFieldErrorMessage("password")}
               disabled={isLoading}
-              autoComplete="current-password"
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={handleTogglePasswordVisibility}
-                        edge="end"
-                        disabled={isLoading}
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "&:hover fieldset": {
-                    borderColor: "primary.main",
-                  },
-                },
-              }}
+              showPassword={showPassword}
+              onToggleVisibility={togglePasswordVisibility}
             />
 
             {/* Submit Button */}
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={isLoading}
-              sx={{
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: "none",
-                fontSize: "1rem",
-              }}
-            >
-              {isLoading ? (
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CircularProgress size={20} color="inherit" />
-                  <span>Signing In...</span>
-                </Box>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
+            <AuthSubmitButton isLoading={isLoading} loadingText="Signing In...">
+              Sign In
+            </AuthSubmitButton>
           </Stack>
         </Box>
 
-        {/* Divider */}
-        <Divider sx={{ my: 3 }} />
-
         {/* Footer Links */}
-        <Box textAlign="center">
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            Don't have an account?{" "}
-            <Link
-              component={RouterLink}
-              to="/register"
-              sx={{
-                textDecoration: "none",
-                fontWeight: 600,
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Sign Up
-            </Link>
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            <Link
-              href="#"
-              sx={{
-                textDecoration: "none",
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Forgot your password?
-            </Link>
-          </Typography>
-        </Box>
-
-        {/* Demo Credentials (Development Only) */}
-        {import.meta.env.DEV && (
-          <Box mt={3} p={2} bgcolor="grey.50" borderRadius={1}>
-            <Typography
-              variant="caption"
-              display="block"
-              mb={1}
-              fontWeight={600}
-            >
-              Demo Credentials:
-            </Typography>
-            <Typography
-              variant="caption"
-              display="block"
-              color="text.secondary"
-            >
-              Email: bob@example.com
-            </Typography>
-            <Typography
-              variant="caption"
-              display="block"
-              color="text.secondary"
-            >
-              Password: bob123
-            </Typography>
-          </Box>
-        )}
+        <AuthFooterLinks
+          primaryLink={{
+            text: "Don't have an account?",
+            link: { text: "Sign Up", to: "/register" },
+          }}
+          secondaryLink={{
+            text: "Forgot your password?",
+            to: "#",
+            external: true,
+          }}
+          showDemoCredentials={true}
+        />
       </Paper>
     </Container>
   );
