@@ -65,10 +65,19 @@ apiClient.interceptors.response.use(
       );
     }
 
+    // Only redirect on 401 for authenticated endpoints (not login/register)
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem("access_token");
-      globalThis.location.href = "/login";
+      const requestUrl = error.config?.url || "";
+
+      // Don't redirect if the 401 is from login or register endpoints
+      if (
+        !requestUrl.includes("/auth/login") &&
+        !requestUrl.includes("/auth/register")
+      ) {
+        // Token expired or invalid during an authenticated request
+        localStorage.removeItem("access_token");
+        globalThis.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

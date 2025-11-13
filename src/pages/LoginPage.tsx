@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { Container, Paper, Stack, Box, Alert } from "@mui/material";
+import { useCallback } from "react";
+import { Container, Paper, Stack, Box } from "@mui/material";
 import { Login as LoginIcon } from "@mui/icons-material";
-import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { loginUser, clearError } from "../store/slices/authSlice";
 import {
@@ -12,7 +12,7 @@ import {
   AuthSubmitButton,
   AuthFooterLinks,
 } from "../components";
-import { useAuthForm, usePasswordToggle, useAuthRedirect } from "../hooks";
+import { useAuthForm, usePasswordToggle } from "../hooks";
 import { validateEmail, validatePassword } from "../utils/authValidation";
 import type { FormErrors } from "../utils/authUtils";
 
@@ -45,24 +45,8 @@ const validateLoginForm = (data: LoginFormData): FormErrors<LoginFormData> => {
  */
 export const LoginPage = () => {
   const dispatch = useAppDispatch();
-  const location = useLocation();
+  const navigate = useNavigate();
   const { isLoading, error } = useAppSelector((state) => state.auth);
-
-  // Check for success message from navigation state
-  const [successMessage, setSuccessMessage] = useState<string | null>(
-    location.state?.message || null
-  );
-
-  // Clear success message after showing it
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
-  // Handle post-authentication redirect
-  useAuthRedirect();
 
   // Password visibility management
   const { showPassword, togglePasswordVisibility } = usePasswordToggle();
@@ -79,10 +63,14 @@ export const LoginPage = () => {
     fields: ["email", "password"],
     validateForm: validateLoginForm,
     onSubmit: async (data) => {
+      // Attempt login
       const result = await dispatch(loginUser(data));
+
+      // Only navigate on success
       if (result.type === "auth/login/fulfilled") {
-        console.log("Login successful");
+        navigate("/polls", { replace: true });
       }
+      // On failure, error is automatically in Redux state and will display
     },
   });
 
@@ -90,16 +78,6 @@ export const LoginPage = () => {
   const handleClearError = useCallback(() => {
     dispatch(clearError());
   }, [dispatch]);
-
-  // Handle enter key press for form submission
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.key === "Enter") {
-        handleSubmit(event as React.FormEvent);
-      }
-    },
-    [handleSubmit]
-  );
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
@@ -118,27 +96,11 @@ export const LoginPage = () => {
           subtitle="Sign in to your account to continue"
         />
 
-        {/* Success Alert */}
-        {successMessage && (
-          <Alert
-            severity="success"
-            onClose={() => setSuccessMessage(null)}
-            sx={{ mb: 2 }}
-          >
-            {successMessage}
-          </Alert>
-        )}
-
         {/* Error Alert */}
         <AuthErrorAlert error={error} onDismiss={handleClearError} />
 
         {/* Login Form */}
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          onKeyDown={handleKeyDown}
-          noValidate
-        >
+        <Box component="form" onSubmit={handleSubmit} noValidate>
           <Stack spacing={3}>
             {/* Email Field */}
             <EmailField
