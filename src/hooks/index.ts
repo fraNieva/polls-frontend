@@ -5,3 +5,6 @@ export { useDebounce } from "./useDebounce";
 export { useAuthForm } from "./useAuthForm";
 export { usePasswordToggle } from "./usePasswordToggle";
 export { useAuthRedirect } from "./useAuthRedirect";
+
+// Custom hooks for theme functionality
+export { useThemeMode } from "./useThemeMode";

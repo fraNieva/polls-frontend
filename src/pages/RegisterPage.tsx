@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { Box, TextField, Alert } from "@mui/material";
 import { PersonAdd as PersonAddIcon } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { AuthPageHeader } from "../components/AuthPageHeader";
-import { EmailField } from "../components/EmailField";
-import { PasswordField } from "../components/PasswordField";
-import { AuthSubmitButton } from "../components/AuthSubmitButton";
-import { AuthErrorAlert } from "../components/AuthErrorAlert";
-import { AuthFooterLinks } from "../components/AuthFooterLinks";
+import {
+  AuthPageHeader,
+  EmailField,
+  PasswordField,
+  AuthSubmitButton,
+  AuthErrorAlert,
+  AuthFooterLinks,
+} from "../components";
 import { useAuthForm } from "../hooks/useAuthForm";
 import { usePasswordToggle } from "../hooks/usePasswordToggle";
 import { validateRegisterForm } from "../utils/authValidation";

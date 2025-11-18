@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { Layout } from "../components/Layout";
-import { ProtectedRoute } from "../components/ProtectedRoute";
+import { Layout, ProtectedRoute } from "../components";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";

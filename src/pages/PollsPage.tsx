@@ -8,12 +8,14 @@ import {
   setCurrentPage,
 } from "../store/slices/pollsSlice";
 import { useDebounce } from "../hooks/useDebounce";
-import { PollsPageHeader } from "../components/PollsPageHeader";
-import { PollsErrorDisplay } from "../components/PollsErrorDisplay";
-import { PollsLoadingSkeleton } from "../components/PollsLoadingSkeleton";
-import { PollsEmptyState } from "../components/PollsEmptyState";
-import { PollsGrid } from "../components/PollsGrid";
-import { PollsPagination } from "../components/PollsPagination";
+import {
+  PollsPageHeader,
+  PollsErrorDisplay,
+  PollsLoadingSkeleton,
+  PollsEmptyState,
+  PollsGrid,
+  PollsPagination,
+} from "../components";
 
 /**
  * Main PollsPage component

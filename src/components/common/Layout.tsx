@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Link, useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -7,9 +7,9 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import { useAppSelector, useAppDispatch } from "../store";
-import { logout } from "../store/slices/authSlice";
-import { Link, useNavigate } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "../../store";
+import { logout } from "../../store/slices/authSlice";
+import { ThemeModeToggle } from "./ThemeModeToggle";
 
 export const Layout = () => {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
@@ -39,7 +39,7 @@ export const Layout = () => {
             🗳️ Polls App
           </Typography>
 
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             <Button color="inherit" component={Link} to="/polls">
               Polls
             </Button>
@@ -66,6 +66,8 @@ export const Layout = () => {
                 </Button>
               </>
             )}
+
+            <ThemeModeToggle />
           </Box>
         </Toolbar>
       </AppBar>
