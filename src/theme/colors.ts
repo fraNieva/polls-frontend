@@ -4,15 +4,17 @@ export const getDesignTokens = (mode: PaletteMode) => ({
   palette: {
     mode,
     primary: {
-      main: "#1976d2", // Professional blue
-      light: "#42a5f5",
-      dark: "#1565c0",
+      // In dark mode, use slightly lighter/softer colors for better contrast
+      main: mode === "light" ? "#0066ff" : "#4a9eff",
+      light: mode === "light" ? "#eaf2ff" : "#6fb0ff",
+      dark: mode === "light" ? "#0052cc" : "#3380e6",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#dc004e", // Accent red for voting/active states
-      light: "#ff5983",
-      dark: "#9a0036",
+      // Softer red in dark mode
+      main: mode === "light" ? "#dc004e" : "#ff4081",
+      light: mode === "light" ? "#ff5983" : "#ff79b0",
+      dark: mode === "light" ? "#9a0036" : "#c51162",
       contrastText: "#ffffff",
     },
     background: {
