@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { PollCard } from "./PollCard";
-import type { Poll } from "../types/poll";
+import type { Poll } from "../../types/poll";
 
 interface PollsGridProps {
   polls: Poll[];

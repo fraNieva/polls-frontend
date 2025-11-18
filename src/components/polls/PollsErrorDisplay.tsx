@@ -1,4 +1,4 @@
-import { AlertMessage } from "./AlertMessage";
+import { AlertMessage } from "../common/AlertMessage";
 
 interface PollsErrorDisplayProps {
   error: string;

@@ -11,8 +11,8 @@ import {
 } from "@mui/material";
 import { Poll as PollIcon, HowToVote } from "@mui/icons-material";
 import { Link } from "react-router-dom";
-import type { Poll, PollOption } from "../types/poll";
-import { PollMetadata } from "./PollMetadata";
+import type { Poll, PollOption } from "../../types/poll";
+import { PollMetadata } from "../poll-detail/PollMetadata";
 
 interface PollCardProps {
   poll: Poll;

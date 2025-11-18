@@ -1,6 +1,6 @@
 import { Box, Stack, Typography, LinearProgress, Chip } from "@mui/material";
 import { Check } from "@mui/icons-material";
-import type { PollOption } from "../types/poll";
+import type { PollOption } from "../../types/poll";
 
 /**
  * Props for PollResultsDisplay component

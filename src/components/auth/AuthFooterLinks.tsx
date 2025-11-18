@@ -1,6 +1,6 @@
 import { Box, Typography, Link, Divider } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
-import { DEMO_CREDENTIALS } from "../utils/authUtils";
+import { DEMO_CREDENTIALS } from "../../utils/authUtils";
 
 /**
  * Link configuration for auth footer
