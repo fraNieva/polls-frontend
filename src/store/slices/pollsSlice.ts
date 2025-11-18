@@ -86,6 +86,20 @@ export const voteOnPoll = createAsyncThunk(
   }
 );
 
+export const createPoll = createAsyncThunk(
+  "polls/createPoll",
+  async (pollData: {
+    title: string;
+    description?: string;
+    is_active?: boolean;
+    is_public?: boolean;
+    options?: string[];
+  }) => {
+    const response = await pollsAPI.createPoll(pollData);
+    return response;
+  }
+);
+
 const pollsSlice = createSlice({
   name: "polls",
   initialState,
@@ -177,6 +191,21 @@ const pollsSlice = createSlice({
           state.polls[pollIndex].user_has_voted = true;
           state.polls[pollIndex].user_vote_option_id = action.payload.optionId;
         }
+      })
+      // Create poll
+      .addCase(createPoll.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createPoll.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Add new poll to the beginning of the list
+        state.polls.unshift(action.payload);
+        state.currentPoll = action.payload;
+      })
+      .addCase(createPoll.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to create poll";
       });
   },
 });

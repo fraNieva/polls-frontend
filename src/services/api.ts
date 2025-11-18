@@ -185,6 +185,7 @@ export const pollsAPI = {
     description?: string;
     is_active?: boolean;
     is_public?: boolean;
+    options?: string[];
   }) {
     const response = await apiClient.post("/polls/", pollData);
     return response.data;
