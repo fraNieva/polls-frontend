@@ -9,10 +9,10 @@ import {
   Avatar,
   LinearProgress,
 } from "@mui/material";
-import { Poll as PollIcon, AccessTime, HowToVote } from "@mui/icons-material";
+import { Poll as PollIcon, HowToVote } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import type { Poll, PollOption } from "../types/poll";
-import { formatDistanceToNow } from "date-fns";
+import { PollMetadata } from "./PollMetadata";
 
 interface PollCardProps {
   poll: Poll;
@@ -21,10 +21,6 @@ interface PollCardProps {
 }
 
 export const PollCard = ({ poll, showVoteButton = true }: PollCardProps) => {
-  const formattedDate = formatDistanceToNow(new Date(poll.pub_date), {
-    addSuffix: true,
-  });
-
   const topOption = poll.options.reduce(
     (max: PollOption, option: PollOption) =>
       option.vote_count > max.vote_count ? option : max,
@@ -75,20 +71,11 @@ export const PollCard = ({ poll, showVoteButton = true }: PollCardProps) => {
         </Box>
 
         {/* Poll Stats */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <HowToVote fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              {poll.total_votes} vote{poll.total_votes === 1 ? "" : "s"}
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <AccessTime fontSize="small" color="action" />
-            <Typography variant="body2" color="text.secondary">
-              {formattedDate}
-            </Typography>
-          </Box>
-        </Box>
+        <PollMetadata
+          totalVotes={poll.total_votes}
+          pubDate={poll.pub_date}
+          variant="compact"
+        />
 
         {/* Top Option Preview */}
         {topOption && poll.total_votes > 0 && (

@@ -1,4 +1,4 @@
-import { Alert, IconButton } from "@mui/material";
+import { AlertMessage } from "./AlertMessage";
 
 /**
  * Props for the AuthErrorAlert component
@@ -32,25 +32,14 @@ export const AuthErrorAlert = ({
   marginBottom = 3,
   severity = "error",
 }: AuthErrorAlertProps) => {
-  if (!error) {
-    return null;
-  }
-
   return (
-    <Alert
+    <AlertMessage
       severity={severity}
-      sx={{ mb: marginBottom }}
-      onClose={onDismiss}
-      action={
-        <IconButton
-          aria-label="close error message"
-          color="inherit"
-          size="small"
-          onClick={onDismiss}
-        />
-      }
-    >
-      {error}
-    </Alert>
+      message={error || ""}
+      dismissible
+      onDismiss={onDismiss}
+      marginBottom={marginBottom}
+      show={!!error}
+    />
   );
 };

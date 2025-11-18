@@ -1,4 +1,4 @@
-import { Box, Alert, Typography } from "@mui/material";
+import { AlertMessage } from "./AlertMessage";
 
 interface PollsErrorDisplayProps {
   error: string;
@@ -16,36 +16,16 @@ export const PollsErrorDisplay = ({
   maxWidth = 600,
 }: PollsErrorDisplayProps) => {
   return (
-    <Box sx={{ mb: 3 }}>
-      <Alert
-        severity="error"
-        action={
-          <Box>
-            <button
-              onClick={onRetry}
-              style={{
-                marginLeft: "8px",
-                padding: "4px 8px",
-                background: "#d32f2f",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Try Again
-            </button>
-          </Box>
-        }
-        sx={{ maxWidth, mx: "auto" }}
-      >
-        <Typography variant="h6" gutterBottom>
-          Failed to load polls
-        </Typography>
-        <Typography variant="body2">
-          {error || "Something went wrong. Please try again."}
-        </Typography>
-      </Alert>
-    </Box>
+    <AlertMessage
+      severity="error"
+      title="Failed to load polls"
+      message={error || "Something went wrong. Please try again."}
+      actionButton={{
+        text: "Try Again",
+        onClick: onRetry,
+      }}
+      maxWidth={maxWidth}
+      centered
+    />
   );
 };
