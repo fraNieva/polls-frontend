@@ -8,6 +8,8 @@ interface User {
   email: string;
   full_name: string;
   is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthState {
@@ -78,6 +80,26 @@ export const getCurrentUser = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (
+    updates: {
+      username?: string;
+      email?: string;
+      full_name?: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await authAPI.updateProfile(updates);
+      return response;
+    } catch (error) {
+      const errorMessage = extractAuthError(error);
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -102,8 +124,8 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.token = action.payload.access_token;
-        state.user = action.payload.user;
         state.isAuthenticated = true;
+        // User profile will be fetched separately via getCurrentUser()
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -124,6 +146,19 @@ const authSlice = createSlice({
       // Get current user
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
+      })
+      // Update profile
+      .addCase(updateUserProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = (action.payload as string) || "Profile update failed";
       });
   },
 });

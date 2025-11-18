@@ -8,3 +8,6 @@ export { useAuthRedirect } from "./useAuthRedirect";
 
 // Custom hooks for theme functionality
 export { useThemeMode } from "./useThemeMode";
+
+// Custom hooks for profile functionality
+export { useProfileForm } from "./useProfileForm";

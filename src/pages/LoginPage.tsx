@@ -3,7 +3,11 @@ import { Container, Paper, Stack, Box } from "@mui/material";
 import { Login as LoginIcon } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
-import { loginUser, clearError } from "../store/slices/authSlice";
+import {
+  loginUser,
+  clearError,
+  getCurrentUser,
+} from "../store/slices/authSlice";
 import {
   AuthPageHeader,
   AuthErrorAlert,
@@ -68,6 +72,8 @@ export const LoginPage = () => {
 
       // Only navigate on success
       if (result.type === "auth/login/fulfilled") {
+        // Fetch current user profile after successful authentication
+        await dispatch(getCurrentUser());
         navigate("/polls", { replace: true });
       }
       // On failure, error is automatically in Redux state and will display
